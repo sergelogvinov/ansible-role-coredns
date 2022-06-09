@@ -1,0 +1,16 @@
+127.0.0.1        localhost
+::1              localhost
+::1              ip6-localhost ip6-loopback
+{% if kubernetes_api_public %}
+{{ kubernetes_api_public.ljust(16) | default(ansible_default_ipv4['address'].ljust(16)) }} {{ kubernetes_api_host|default('kubernetes.lan') }}
+{% endif %}
+
+{% for host in groups[coredns_configs_hostgroup]|default([])|sort %}
+{% if hostvars[host]['ansible_host'] is defined %}
+{% if host == host.split('.')[0] %}
+{{ hostvars[host]['ansible_host'].ljust(16) }} {{ host }}.{{ kubernetes_dns_domain }}
+{% else %}
+{{ hostvars[host]['ansible_host'].ljust(16) }} {{ host }}
+{% endif %}
+{% endif %}
+{% endfor %}

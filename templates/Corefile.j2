@@ -1,0 +1,56 @@
+(empty) {
+    file /etc/coredns/empty.db
+}
+
+local:53 {
+    bind {{ coredns_configs_bind }}
+    import empty
+}
+
+svc:53 {
+    bind {{ coredns_configs_bind }}
+    import empty
+}
+
+168.192.in-addr.arpa:53 {
+    bind {{ coredns_configs_bind }}
+    import empty
+}
+
+30.172.in-addr.arpa:53 {
+    bind {{ coredns_configs_bind }}
+    import empty
+}
+
+.:53 {
+    errors
+    bind {{ coredns_configs_bind }}
+    # prometheus 127.0.0.1:9153
+    health 127.0.0.1:8091 {
+        lameduck 5s
+    }
+
+    hosts /etc/coredns/hosts {
+        reload 1m
+        fallthrough
+    }
+{% if kubernetes_dns_domain is defined and kubernetes_dns_domain %}
+    kubernetes {{ kubernetes_dns_domain }} in-addr.arpa ip6.arpa {
+        kubeconfig /etc/coredns/kubeconfig coredns
+        pods insecure
+        upstream
+        ttl 60
+    }
+{% endif %}
+
+    forward . tls://1.1.1.1 tls://1.0.0.1 {
+        health_check 10s
+        tls_servername cloudflare-dns.com
+        policy sequential
+        expire 30s
+    }
+    cache 300
+    loop
+    reload
+    loadbalance
+}

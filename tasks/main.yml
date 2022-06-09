@@ -1,0 +1,33 @@
+---
+
+- name: 'Prepare directories'
+  become: yes
+  file:
+    path: "{{ item.name }}"
+    mode: "{{ item.mode }}"
+    owner: root
+    group: root
+    state: directory
+  with_items:
+    - { name: /etc/coredns,            mode: '0755' }
+
+- name: Update main config
+  become: yes
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+    owner: root
+    group: root
+    mode: "{{ item.mode }}"
+  when: item.when
+  with_items:
+    - { src: "hosts.j2",            dest: "/etc/coredns/hosts",                   mode: '0644', when: true }
+    - { src: "empty.db.j2",         dest: "/etc/coredns/empty.db",                mode: '0644', when: true }
+    - { src: "Corefile.j2",         dest: "/etc/coredns/Corefile",                mode: '0644', when: true }
+    - { src: "resolv.conf.j2",      dest: "/etc/coredns/resolv.conf",             mode: '0644',
+        when: "{{ coredns_configs_dnsservers|length > 0 }}" }
+    - { src: "resolv.local.j2",     dest: "/etc/resolv.conf.local",               mode: '0644', when: true }
+  tags: [coredns]
+
+- import_tasks: install.yml
+  when: coredns|bool

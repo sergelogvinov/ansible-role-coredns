@@ -1,0 +1,50 @@
+---
+
+- name: create user to run services
+  user:
+    name: coredns
+    home: /var/lib/coredns
+    shell: /bin/false
+    createhome: no
+
+- name: get binary
+  get_url:
+    url: "{{ coredns_distrib }}"
+    dest: "/var/cache/apt/archives/coredns-{{ coredns_version }}.linux_amd64.tgz"
+  register: coredns_downloaded
+
+- name: unarchive binary
+  unarchive:
+    src: "/var/cache/apt/archives/coredns-{{ coredns_version }}.linux_amd64.tgz"
+    dest: /var/cache/apt/archives
+    remote_src: yes
+  when: coredns_downloaded.changed|bool
+
+- name: install binary
+  copy:
+    src: "/var/cache/apt/archives/coredns"
+    dest: /usr/local/bin/coredns
+    remote_src: yes
+    owner: root
+    group: root
+    mode: 0755
+  register: coredns_installed
+
+- name: write configs
+  template:
+    src: "{{ item.src }}"
+    dest: "{{ item.dest }}"
+  with_items:
+    - { src: "{{ ansible_service_mgr }}/coredns.service.j2", dest: "/etc/systemd/system/coredns.service" }
+  register: coredns_systemd_updated
+  notify: [reload systemd]
+
+- meta: flush_handlers
+  when: coredns_systemd_updated.changed|bool
+
+- name: restart coredns (systemd)
+  service:
+    name: coredns
+    state: restarted
+    enabled: yes
+  when: coredns_installed.changed|bool or coredns_systemd_updated.changed|bool

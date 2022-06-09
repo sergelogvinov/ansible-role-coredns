@@ -1,0 +1,14 @@
+---
+
+kubernetes_dns_domain: ~
+kubernetes_api_public: ~
+kubernetes_api_host: ~
+
+coredns: false
+coredns_version: 1.6.9
+coredns_distrib: "https://github.com/coredns/coredns/releases/download/v{{ coredns_version }}/coredns_{{ coredns_version }}_linux_amd64.tgz"
+coredns_args: -conf /etc/coredns/Corefile
+
+coredns_configs_bind: '127.0.0.1 ::1'
+coredns_configs_dnsservers: ['8.8.8.8','1.1.1.1']
+coredns_configs_hostgroup: ~

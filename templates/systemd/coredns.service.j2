@@ -1,0 +1,18 @@
+[Unit]
+Description=CoreDNS Service
+Wants=network-online.target
+After=network-online.target
+
+[Service]
+User=coredns
+Group=coredns
+Type=simple
+Restart=always
+RestartSec=5
+WorkingDirectory=/etc/coredns
+AmbientCapabilities=CAP_NET_BIND_SERVICE
+
+ExecStart=/usr/local/bin/coredns {{ coredns_args }}
+
+[Install]
+WantedBy=multi-user.target
